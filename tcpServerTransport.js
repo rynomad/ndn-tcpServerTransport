@@ -17,7 +17,7 @@ var serverTcpTransport = function serverTcpTransport(socket)
 
 };
 
-exports.serverTcpTransport = serverTcpTransport;
+exports.transport = serverTcpTransport;
 
 serverTcpTransport.prototype.connect = function(face, onopenCallback) 
 {
@@ -74,8 +74,9 @@ serverTcpTransport.prototype.connect = function(face, onopenCallback)
 serverTcpTransport.prototype.send = function(/*Buffer*/ data) 
 {
   if (this.sock_ready)
-  {    console.log('sending data')
+  {    console.log('sending data', data);
     this.socket.write(data);
+ console.log('fault?')
   }else
     console.log('TCP connection is not established.');
 };

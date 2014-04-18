@@ -15,7 +15,7 @@
   "bugs": {
     "url": "https://github.com/rynomad/ndn-tcpServerTransport/issues"
   },
-  "dependencies"{
+  "dependencies":{
     "ndn-lib": "*"
   },
   "homepage": "https://github.com/rynomad/ndn-tcpServerTransport"
