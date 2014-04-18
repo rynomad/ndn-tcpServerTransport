@@ -1,76 +1,90 @@
-var ndn = require('ndn-lib');
-var ElementReader = ndn.ElementReader;
-var ndnbuf = ndn.customBuffer;
-var Name = ndn.Name
-var Data = ndn.Data
-var local = {}
+/** 
+ * Copyright (C) 2013-2014 Regents of the University of California.
+ * @author: Wentao Shang
+ * See COPYING for copyright and distribution information.
+ */
+var customBuf = Buffer
+var DataUtils = require('ndn-lib').DataUtils;
+var ElementReader = require('ndn-lib').ElementReader;
 
-local.transport = function (stream) {
-  this.port = stream
+var serverTcpTransport = function serverTcpTransport(socket) 
+{    
+  this.socket = socket;
+  this.sock_ready = true;
+  this.elementReader = null;
+  this.connectedHost = null; // Read by Face.
+  this.connectedPort = null; // Read by Face.
+
 };
 
+exports.serverTcpTransport = serverTcpTransport;
 
-/**
- * Connect to the host and port in face.  This replaces a previous connection and sets connectedHost
- *   and connectedPort.  Once connected, call onopenCallback().
- * Listen on the port to read an entire binary XML encoded element and call
- *    face.onReceivedElement(element).
- */
-local.transport.prototype.connect = function(face, onopenCallback)
+serverTcpTransport.prototype.connect = function(face, onopenCallback) 
 {
+
+
   this.elementReader = new ElementReader(face);
+
+  // Connect to local ndnd via TCP    
   var self = this;
-  this.port.on('onmessage', function(ev) {
-    console.log('RecvHandle called on local face', ev);
 
-    
-    if (ev instanceof ArrayBuffer) {
-      console.log(typeof ev)
-      var bytearray = new ndnbuf(ev);
-
-      
+  this.socket.on('data', function(data) {      
+    if (typeof data == 'object') {
+      // Make a copy of data (maybe a customBuf or a String)
+      var buf = new customBuf(data);
       try {
         // Find the end of the binary XML element and call face.onReceivedElement.
-        self.elementReader.onReceivedData(ev);
+        self.elementReader.onReceivedData(buf);
       } catch (ex) {
-        console.log("NDN.ws.onmessage exception: " + ex);
+        console.log("NDN.TcpTransport.ondata exception: " + ex);
         return;
       }
-      // garbage collect arraybuffer
-      //var ms = new MessageChannel()
-      //ms.port1.postMessage(ev.data, [ev.data])
     }
   });
+    
+  this.socket.on('connect', function() {
+    console.log('socket.onopen: TCP connection opened.');
+      
+    self.sock_ready = true;
 
-  onopenCallback();
+  });
+    
+  this.socket.on('error', function() {
+    console.log('socket.onerror: TCP socket error');
+  });
+    
+  this.socket.on('close', function() {
+    console.log('socket.onclose: TCP connection closed.');
+
+    self.socket = null;
+      
+    // Close Face when TCP Socket is closed
+    face.closeByTransport();
+  });
+
+  this.connectedHost = face.host;
+  this.connectedPort = face.port;
+  onopenCallback()  
 
 };
 
 /**
- * Send the Uint8Array data.
+ * Send data.
  */
-local.transport.prototype.send = function(data)
+serverTcpTransport.prototype.send = function(/*Buffer*/ data) 
 {
-  if (true) {
-        // If we directly use data.buffer to feed ws.send(),
-        // WebSocket may end up sending a packet with 10000 bytes of data.
-        // That is, WebSocket will flush the entire buffer
-        // regardless of the offset of the Uint8Array. So we have to create
-        // a new Uint8Array buffer with just the right size and copy the
-        // content from binaryInterest to the new buffer.
-        //    ---Wentao
-        var bytearray = new Uint8Array(data.length)
-        bytearray.set(data)
-        this.port.emit('postMessage', bytearray.buffer);
-
-        //garbage collect
-        //var ms = new MessageChannel();
-        //ms.port1.postMessage(bytearray.buffer, [bytearray.buffer])
-        //ms.port1.postMessage(data.buffer, [data.buffer])
-    console.log('local.send() returned.');
-  }
-  else
-    console.log('local connection is not established.');
+  if (this.sock_ready)
+  {    console.log('sending data')
+    this.socket.write(data);
+  }else
+    console.log('TCP connection is not established.');
 };
 
-module.exports = local;
+/**
+ * Close transport
+ */
+serverTcpTransport.prototype.close = function() 
+{
+  this.socket.end();
+  console.log('TCP connection closed.');
+};
