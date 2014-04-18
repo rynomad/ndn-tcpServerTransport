@@ -1,0 +1,22 @@
+{
+  "name": "ndn-tcpServerTransport",
+  "version": "0.0.0",
+  "description": "ndn-js transport wrapper for existing socket connections, for use on server",
+  "main": "tcpServerTransport.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/rynomad/ndn-tcpServerTransport.git"
+  },
+  "author": "Ryan Bennett",
+  "license": "GPL",
+  "bugs": {
+    "url": "https://github.com/rynomad/ndn-tcpServerTransport/issues"
+  },
+  "dependencies"{
+    "ndn-lib": "*"
+  },
+  "homepage": "https://github.com/rynomad/ndn-tcpServerTransport"
+}
